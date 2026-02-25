@@ -70,6 +70,7 @@
 #define ARMV7M_EXCP_PENDSV   14
 #define ARMV7M_EXCP_SYSTICK  15
 #define ARMV7M_EXCP_HARDIRQ0 16 /* Hardware IRQ0. Any exceptions above this one are also hard IRQs */
+#define ARMV7M_EXCP_SPURIOUS 528 /* NVIC returns this when no pending IRQ found (must match NVIC.cs SpuriousInterrupt) */
 
 /* For banked exceptions, we store information what Security mode they target
  * in a specific bit of exception number (higher than max supported exceptions).

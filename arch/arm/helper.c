@@ -1330,7 +1330,20 @@ static void do_interrupt_v7m(CPUState *env)
             tlib_nvic_set_pending_irq(ARMV7M_EXCP_SECURE);
             return;
         case EXCP_IRQ:
+        {
+            int prev_exception = env->v7m.exception;
             env->v7m.exception = tlib_nvic_acknowledge_irq();
+            if(env->v7m.exception >= ARMV7M_EXCP_SPURIOUS) {
+                /* Spurious interrupt: the pending IRQ was cleared between
+                 * CPU_INTERRUPT_HARD being set and AcknowledgeIRQ().
+                 * This is a TOCTOU race inherent to Renode's threading model
+                 * where NVIC and CPU run on separate threads.
+                 * AcknowledgeIRQ() already called IRQ.Set(false), so just
+                 * restore the previous exception number and return. */
+                tlib_printf(LOG_LEVEL_DEBUG, "Spurious IRQ (acknowledged=%d), abandoning exception entry.", env->v7m.exception);
+                env->v7m.exception = prev_exception;
+                return;
+            }
             if(env->v7m.has_trustzone) {
                 /* If we have TrustZone, NVIC_ITNSx determines the security state
                  * the hardware IRQ is taken to */
@@ -1374,6 +1387,7 @@ static void do_interrupt_v7m(CPUState *env)
                 lr |= deposit32(lr, 0, 1, secure_target);
             }
             break;
+        }
         default:
             cpu_abort(env, "Unhandled exception 0x%x\n", env->exception_index);
             return; /* Never happens.  Keep compiler happy.  */
