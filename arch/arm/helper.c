@@ -2648,10 +2648,16 @@ static inline int pmsav8_check_access_with_region(CPUState *env, uint32_t addres
     bool multiple_regions = false;
     bool mpu_enabled = PMSA_ENABLED(env->pmsav8[secure].ctrl);
 
+    /* Accesses to the Private Peripheral Bus always use the default system address map, so the MPU
+     * is never consulted for them regardless of how it is programmed; ARMv8-M Manual: Rule NBPN.
+     * The `MPUCheck` pseudocode applies this ahead of the MPU_CTRL.ENABLE and PRIVDEFENA checks,
+     * which is what keeps the SCS reachable while a region set that doesn't cover it is active. */
+    bool ppb_access = address >= 0xE0000000 && address <= 0xE00FFFFF;
+
     *prot = 0;
     *resolved_region = PMSA_MPU_REGION_INVALID;
 
-    if(!mpu_enabled) {
+    if(!mpu_enabled || ppb_access) {
         hit = false;
     } else {
         hit = pmsav8_get_region(env, address, secure, resolved_region, &multiple_regions, &applies_to_whole_page);
@@ -2684,10 +2690,10 @@ static inline int pmsav8_check_access_with_region(CPUState *env, uint32_t addres
         }
     } else {
         /* No region hit, use background region if:
-         * - MPU disabled: for all accesses
+         * - MPU disabled, or the access is to the PPB: for all accesses
          * - MPU enabled: for privileged accesses if default memory map is enabled (PRIVDEFENA)
          */
-        if(!mpu_enabled || (!is_user && PMSA_PRIVDEFENA(env->pmsav8[secure].ctrl))) {
+        if(!mpu_enabled || ppb_access || (!is_user && PMSA_PRIVDEFENA(env->pmsav8[secure].ctrl))) {
             *prot = cortexm_check_default_mapping_v8(address);
         } else {
             goto do_fault;
