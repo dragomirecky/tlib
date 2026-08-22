@@ -784,7 +784,7 @@ void tlib_set_pmsav8_rbar(uint32_t value, uint32_t region_offset, bool secure)
     guard_pmsav8(true);
     uint32_t index = cpu->pmsav8[secure].rnr;
     if(region_offset > 0) {
-        index = (index << 2) + region_offset;
+        index = (index & ~3) + region_offset;
     }
     cpu->pmsav8[secure].rbar[index] = value;
 }
@@ -795,7 +795,7 @@ void tlib_set_pmsav8_rlar(uint32_t value, uint32_t region_offset, bool secure)
     guard_pmsav8(true);
     uint32_t index = cpu->pmsav8[secure].rnr;
     if(region_offset > 0) {
-        index = (index << 2) + region_offset;
+        index = (index & ~3) + region_offset;
     }
 
     //  XN is enforced in 0xE0000000-0xFFFFFFFF space; ARMv8-M Manual: Rules VCTC and KDJG.
@@ -844,7 +844,7 @@ uint32_t tlib_get_pmsav8_rbar(uint32_t region_offset, bool secure)
     guard_pmsav8(false);
     uint32_t index = cpu->pmsav8[secure].rnr;
     if(region_offset > 0) {
-        index = (index << 2) + region_offset;
+        index = (index & ~3) + region_offset;
     }
     return cpu->pmsav8[secure].rbar[index];
 }
@@ -855,7 +855,7 @@ uint32_t tlib_get_pmsav8_rlar(uint32_t region_offset, bool secure)
     guard_pmsav8(false);
     uint32_t index = cpu->pmsav8[secure].rnr;
     if(region_offset > 0) {
-        index = (index << 2) + region_offset;
+        index = (index & ~3) + region_offset;
     }
     return cpu->pmsav8[secure].rlar[index];
 }
