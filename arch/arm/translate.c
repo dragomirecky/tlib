@@ -16587,9 +16587,17 @@ int process_interrupt(int interrupt_request, CPUState *env)
        We avoid this by disabling interrupts when
        pc contains a magic address.  */
     //  fix from https://bugs.launchpad.net/qemu/+bug/942659
+    bool exception_is_unmasked = true;
+#ifdef TARGET_PROTO_ARM_M
+    if(env->v7m.primask[env->secure] & PRIMASK_EN) {
+        int pending_exception = tlib_nvic_find_pending_irq();
+        pending_exception &= ~BANKED_SECURE_EXCP_BIT;
+        exception_is_unmasked = pending_exception == ARMV7M_EXCP_NMI || pending_exception == ARMV7M_EXCP_HARD;
+    }
+#endif
     if((interrupt_request & CPU_INTERRUPT_HARD) &&
 #ifdef TARGET_PROTO_ARM_M
-       (env->regs[15] < 0xffffffe0) && !(env->v7m.primask[env->secure] & PRIMASK_EN))
+       (env->regs[15] < 0xffffffe0) && exception_is_unmasked)
 #else
        !(env->uncached_cpsr & CPSR_I))
 #endif
