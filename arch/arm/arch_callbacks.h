@@ -7,6 +7,7 @@ int32_t tlib_nvic_acknowledge_irq(void);
 void tlib_nvic_complete_irq(int32_t number);
 void tlib_nvic_write_basepri(int32_t number, uint32_t secure);
 int32_t tlib_nvic_find_pending_irq(void);
+int32_t tlib_nvic_is_pending_irq_eligible(int32_t number);
 int32_t tlib_nvic_get_pending_masked_irq(void);
 void tlib_nvic_set_pending_irq(int32_t no);
 uint32_t tlib_has_enabled_trustzone(void);
