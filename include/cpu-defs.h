@@ -198,7 +198,9 @@ enum block_interrupt_cause {
     TB_INTERRUPT_EXCLUDE_LAST_INSTRUCTION = 2,
 };
 
-#define MAX_IO_ACCESS_REGIONS_COUNT 1024
+// One 1MiB memory region requires 1024 ARM translation pages routed through
+// I/O. Leave equal headroom for watchpoints and other page-level users.
+#define MAX_IO_ACCESS_REGIONS_COUNT 2048
 
 #define CPU_TEMP_BUF_NLONGS    128
 #define cpu_common_first_field instructions_count_limit
