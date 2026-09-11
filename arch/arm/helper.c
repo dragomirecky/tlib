@@ -1397,6 +1397,14 @@ static void do_interrupt_v7m(CPUState *env)
                 env->regs[0] = tlib_do_semihosting();
                 return;
             }
+            /* A debug event cannot preempt NMI or HardFault. With no halting
+             * debug handling here, retrying BKPT would execute instructions
+             * in architectural lockup. Abort this CPU so the host can inspect
+             * the fault and reset it without burning the instruction budget. */
+            if((env->v7m.exception & ~BANKED_SECURE_EXCP_BIT) == ARMV7M_EXCP_NMI
+                || (env->v7m.exception & ~BANKED_SECURE_EXCP_BIT) == ARMV7M_EXCP_HARD) {
+                tlib_abortf("Cortex-M lockup: BKPT at PC 0x%08" PRIx32 " in exception %d", env->regs[15], env->v7m.exception);
+            }
             /* Banked DEBUG, but it's not exactly true, see below */
             tlib_nvic_set_pending_irq(env->secure ? BANKED_SECURE_EXCP(ARMV7M_EXCP_DEBUG) : ARMV7M_EXCP_DEBUG);
             return;
